@@ -178,7 +178,8 @@ fi
 
 echo "[publish] push to origin/${DEFAULT_BRANCH}"
 auth_push_url="https://${GITHUB_USERNAME}:${GITHUB_TOKEN}@github.com/${GITHUB_USERNAME}/${REPO_NAME}.git"
-git push -u "$auth_push_url" "$DEFAULT_BRANCH"
+git push "$auth_push_url" "$DEFAULT_BRANCH"
+git branch --set-upstream-to="origin/${DEFAULT_BRANCH}" "$DEFAULT_BRANCH" >/dev/null 2>&1 || true
 
 echo "[publish] enable or update GitHub Pages"
 pages_payload='{"source":{"branch":"main","path":"/docs"}}'
