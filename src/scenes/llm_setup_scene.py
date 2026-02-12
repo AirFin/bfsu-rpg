@@ -61,6 +61,16 @@ class LLMSetupScene:
             self.cursor_timer = 0
             self.cursor_visible = not self.cursor_visible
 
+        # 未进入编辑状态时，也允许在字段上直接粘贴
+        if (not self.editing_field and self.llm_enabled and self.selected_option in [1, 2, 3]
+                and self._is_paste_shortcut()):
+            self.editing_field = True
+            self.edit_field_index = self.selected_option
+            if not self._paste_from_clipboard(self.edit_field_index):
+                self.status_message = "未获取到粘贴内容，请再试一次"
+                self.status_color = 8
+            return
+
         if self.editing_field:
             self._handle_text_edit()
             return
@@ -102,6 +112,15 @@ class LLMSetupScene:
 
     def _handle_text_edit(self):
         current_value = self._get_field_value(self.edit_field_index)
+
+        if self._is_paste_shortcut():
+            if self._paste_from_clipboard(self.edit_field_index):
+                self.status_message = "已粘贴"
+                self.status_color = 11
+            else:
+                self.status_message = "无法读取剪贴板，请手动输入"
+                self.status_color = 8
+            return
 
         input_chars = pyxel.input_text
         if input_chars:
@@ -149,6 +168,91 @@ class LLMSetupScene:
 
         from src.scenes.scene_manager import SceneType
         self.scene_manager.change_scene(SceneType.CHARACTER_CREATION)
+
+    def _is_paste_shortcut(self):
+        """是否触发了 Ctrl/Cmd + V"""
+        if not pyxel.btnp(pyxel.KEY_V):
+            return False
+
+        return (
+            pyxel.btn(pyxel.KEY_CTRL) or
+            pyxel.btn(pyxel.KEY_LCTRL) or
+            pyxel.btn(pyxel.KEY_RCTRL) or
+            pyxel.btn(pyxel.KEY_GUI) or
+            pyxel.btn(pyxel.KEY_LGUI) or
+            pyxel.btn(pyxel.KEY_RGUI)
+        )
+
+    def _paste_from_clipboard(self, target_field_index):
+        """
+        粘贴逻辑：
+        1) 优先使用 pyxel.input_text（桌面端常见）
+        2) Web(Pyodide) 尝试 navigator.clipboard.readText()
+        """
+        pasted = pyxel.input_text
+        if pasted:
+            return self._apply_pasted_text(pasted, target_field_index)
+
+        # Web 环境：尝试直接读浏览器剪贴板（异步）
+        try:
+            from js import navigator
+        except Exception:
+            return False
+
+        try:
+            promise = navigator.clipboard.readText()
+        except Exception:
+            return False
+
+        def on_success(text):
+            text = str(text) if text is not None else ""
+            if self._apply_pasted_text(text, target_field_index):
+                self.status_message = "已粘贴"
+                self.status_color = 11
+            else:
+                self.status_message = "剪贴板为空或格式无效"
+                self.status_color = 8
+
+        def on_error(_err):
+            self.status_message = "无法读取剪贴板，请手动输入"
+            self.status_color = 8
+
+        promise.then(on_success).catch(on_error)
+        return True
+
+    def _apply_pasted_text(self, text, target_field_index):
+        """应用粘贴内容，支持直接值或 .env 片段"""
+        text = (text or "").replace("\r\n", "\n").strip()
+        if not text:
+            return False
+
+        # 允许一次粘贴 .env 片段自动填充三项
+        parsed = {}
+        for line in text.split("\n"):
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip()
+            if key in ["LLM_API_KEY", "LLM_BASE_URL", "LLM_MODEL"]:
+                parsed[key] = value
+
+        if parsed:
+            if "LLM_API_KEY" in parsed:
+                self.api_key = parsed["LLM_API_KEY"][:160]
+            if "LLM_BASE_URL" in parsed:
+                self.base_url = parsed["LLM_BASE_URL"][:160]
+            if "LLM_MODEL" in parsed:
+                self.model = parsed["LLM_MODEL"][:160]
+            self.status_message = "已从粘贴内容自动填充配置"
+            self.status_color = 11
+            return True
+
+        # 普通粘贴：追加到当前字段
+        current = self._get_field_value(target_field_index)
+        self._set_field_value(target_field_index, (current + text)[:160])
+        return True
 
     def _get_field_value(self, field_index):
         if field_index == 1:
@@ -226,5 +330,5 @@ class LLMSetupScene:
         status_y = panel_y + panel_h + 8
         draw_text(status_x, status_y, self.status_message, self.status_color)
 
-        hint = "↑↓选择, Enter编辑/确认, Esc返回"
+        hint = "↑↓选择, Enter编辑/确认, Ctrl/Cmd+V粘贴, Esc返回"
         draw_text((WINDOW_WIDTH - text_width(hint)) // 2, WINDOW_HEIGHT - 14, hint, 13)
