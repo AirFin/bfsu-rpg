@@ -748,25 +748,19 @@ class GameScene:
     def _update_mosque_interior(self):
         """更新清真寺内部逻辑"""
         # 处理玩家移动（简化版，无碰撞）
-        dx, dy = 0, 0
         speed = 2
         
         move_x, move_y = InputHandler.get_movement()
+        dx = move_x * speed
+        dy = move_y * speed
 
-        if move_y < 0:
-            dy = -speed
-            self.player.direction = "up"
-        elif move_y > 0:
-            dy = speed
-            self.player.direction = "down"
-        if move_x < 0:
-            dx = -speed
-            self.player.direction = "left"
-        elif move_x > 0:
-            dx = speed
-            self.player.direction = "right"
+        if abs(move_x) > 0.001 or abs(move_y) > 0.001:
+            if abs(move_x) > abs(move_y):
+                self.player.direction = "right" if move_x > 0 else "left"
+            else:
+                self.player.direction = "down" if move_y > 0 else "up"
         
-        self.player.is_moving = dx != 0 or dy != 0
+        self.player.is_moving = abs(dx) > 0.001 or abs(dy) > 0.001
         
         # 更新玩家位置（室内边界）
         new_x = self.player.x + dx

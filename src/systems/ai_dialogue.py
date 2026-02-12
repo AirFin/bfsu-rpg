@@ -226,7 +226,7 @@ class AIDialogueSystem:
                 self.input_text = self.input_text[:-1]
                 
         # 确认键发送（Enter / 手柄A）
-        if InputHandler.is_just_pressed([pyxel.KEY_RETURN, pyxel.GAMEPAD1_BUTTON_A]) and self.input_delay == 0:
+        if InputHandler.is_just_pressed(InputHandler.SUBMIT) and self.input_delay == 0:
             if self.input_text.strip():
                 self._send_message()
                 self.input_delay = 10

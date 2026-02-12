@@ -134,14 +134,14 @@ class LLMSetupScene:
 
         self._set_field_value(self.edit_field_index, current_value)
 
-        if InputHandler.is_just_pressed([pyxel.KEY_RETURN, pyxel.GAMEPAD1_BUTTON_A]):
+        if InputHandler.is_just_pressed(InputHandler.SUBMIT):
             self.editing_field = False
             self.edit_field_index = -1
             self.status_message = "配置已更新"
             self.status_color = 11
             return
 
-        if InputHandler.is_just_pressed([pyxel.KEY_ESCAPE, pyxel.GAMEPAD1_BUTTON_B]):
+        if InputHandler.is_just_pressed(InputHandler.BACK):
             self.editing_field = False
             self.edit_field_index = -1
 

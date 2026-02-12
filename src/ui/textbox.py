@@ -6,6 +6,7 @@
 import pyxel
 from config import WINDOW_WIDTH, WINDOW_HEIGHT, COLOR_WHITE, COLOR_BLACK
 from src.utils.font_manager import draw_text
+from src.systems.input_handler import InputHandler
 
 
 class TextBox:
@@ -33,7 +34,7 @@ class TextBox:
             return False
             
         # 按键关闭
-        if pyxel.btnp(pyxel.KEY_RETURN) or pyxel.btnp(pyxel.KEY_SPACE):
+        if InputHandler.is_just_pressed(InputHandler.CONFIRM):
             self.hide()
             return True
             

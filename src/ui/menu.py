@@ -6,6 +6,7 @@
 import pyxel
 from config import WINDOW_WIDTH, WINDOW_HEIGHT, COLOR_WHITE, COLOR_BLACK, COLOR_YELLOW
 from src.utils.font_manager import draw_text, text_width
+from src.systems.input_handler import InputHandler
 
 
 class Menu:
@@ -36,17 +37,17 @@ class Menu:
             return None
             
         # 上下选择
-        if pyxel.btnp(pyxel.KEY_UP):
+        if InputHandler.is_just_pressed(InputHandler.MOVE_UP):
             self.selected = (self.selected - 1) % len(self.options)
-        elif pyxel.btnp(pyxel.KEY_DOWN):
+        elif InputHandler.is_just_pressed(InputHandler.MOVE_DOWN):
             self.selected = (self.selected + 1) % len(self.options)
             
         # 确认选择
-        if pyxel.btnp(pyxel.KEY_RETURN) or pyxel.btnp(pyxel.KEY_Z):
+        if InputHandler.is_just_pressed(InputHandler.CONFIRM):
             return self.options[self.selected]
             
         # 取消
-        if pyxel.btnp(pyxel.KEY_ESCAPE) or pyxel.btnp(pyxel.KEY_X):
+        if InputHandler.is_just_pressed(InputHandler.CANCEL):
             self.close()
             return None
             

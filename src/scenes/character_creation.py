@@ -138,11 +138,11 @@ class CharacterCreationScene:
                 self.player_data['name'] = self.player_data['name'][:-1]
                 
         # 回车/手柄A确认
-        if InputHandler.is_just_pressed([pyxel.KEY_RETURN, pyxel.GAMEPAD1_BUTTON_A]):
+        if InputHandler.is_just_pressed(InputHandler.SUBMIT):
             self.editing_name = False
             
         # ESC/手柄B取消
-        if InputHandler.is_just_pressed([pyxel.KEY_ESCAPE, pyxel.GAMEPAD1_BUTTON_B]):
+        if InputHandler.is_just_pressed(InputHandler.BACK):
             self.editing_name = False
             
     def _confirm_creation(self):

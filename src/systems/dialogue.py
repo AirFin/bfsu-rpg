@@ -6,6 +6,7 @@
 import pyxel
 from config import WINDOW_WIDTH, WINDOW_HEIGHT, COLOR_WHITE, COLOR_BLACK
 from src.utils.font_manager import draw_text, text_width
+from src.systems.input_handler import InputHandler
 
 
 class DialogueSystem:
@@ -45,7 +46,7 @@ class DialogueSystem:
                 self.text_display_index += 1
                 
         # 按键处理
-        if pyxel.btnp(pyxel.KEY_RETURN) or pyxel.btnp(pyxel.KEY_SPACE):
+        if InputHandler.is_just_pressed(InputHandler.CONFIRM):
             if self.text_display_index < len(self.text):
                 # 跳过打字机效果，直接显示全部
                 self.text_display_index = len(self.text)

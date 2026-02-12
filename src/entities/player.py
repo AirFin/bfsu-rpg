@@ -77,23 +77,16 @@ class Player:
         
         # 处理输入（键盘 + 手柄）
         move_x, move_y = InputHandler.get_movement()
-        dx, dy = 0, 0
+        dx = move_x * self.speed
+        dy = move_y * self.speed
 
-        if move_y < 0:
-            dy = -self.speed
-            self.direction = "up"
-        elif move_y > 0:
-            dy = self.speed
-            self.direction = "down"
+        if abs(move_x) > 0.001 or abs(move_y) > 0.001:
+            if abs(move_x) > abs(move_y):
+                self.direction = "right" if move_x > 0 else "left"
+            else:
+                self.direction = "down" if move_y > 0 else "up"
 
-        if move_x < 0:
-            dx = -self.speed
-            self.direction = "left"
-        elif move_x > 0:
-            dx = self.speed
-            self.direction = "right"
-        
-        self.is_moving = dx != 0 or dy != 0
+        self.is_moving = abs(dx) > 0.001 or abs(dy) > 0.001
         
         # 尝试移动（带碰撞检测）
         if dx != 0:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Post-process Pyxel web HTML and inject a mobile control visibility patch.
+Post-process Pyxel web HTML and inject a custom mobile input layer.
 """
 
 from __future__ import annotations
@@ -16,6 +16,15 @@ PATCH_START = "<!-- MOBILE_CONTROLS_PATCH_START -->"
 PATCH_END = "<!-- MOBILE_CONTROLS_PATCH_END -->"
 
 
+def _disable_builtin_gamepad(html: str) -> str:
+    """Force launchPyxel gamepad option to disabled to avoid input conflicts."""
+    return re.sub(
+        r'gamepad\s*:\s*["\']enabled["\']',
+        'gamepad: "disabled"',
+        html,
+    )
+
+
 def _build_patch_block() -> str:
     if not ENABLE_MOBILE_CONTROLS_PATCH:
         return "\n".join(
@@ -27,110 +36,158 @@ def _build_patch_block() -> str:
         )
 
     style = """
-<style id="mobile-controls-visual-patch">
+<style id="mobile-controls-input-patch">
+html.pyxel-mobile-controls img#pyxel-gamepad-cross,
 html.pyxel-mobile-controls img#pyxel-gamepad-button,
 html.pyxel-mobile-controls img#pyxel-gamepad-menu {
-  opacity: 0.98 !important;
-  filter: brightness(1.45) contrast(1.55) saturate(1.25)
-    drop-shadow(0 0 10px rgba(120, 170, 255, 0.75));
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }
 
-html.pyxel-mobile-controls img#pyxel-gamepad-cross {
-  opacity: 0.08 !important;
-  filter: brightness(1.2) contrast(1.2);
-}
-
-html.pyxel-mobile-controls div#pyxel-mobile-overlay {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 40;
-}
-
-html.pyxel-mobile-controls div#pyxel-mobile-joystick {
-  position: absolute;
-  border-radius: 50%;
+html.pyxel-mobile-controls #bfsu-mobile-controls {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 90;
+  height: 230px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 14px 20px 22px;
   box-sizing: border-box;
-  border: 2px solid rgba(140, 185, 255, 0.95);
+  background: linear-gradient(
+    to top,
+    rgba(12, 16, 26, 0.92) 0%,
+    rgba(12, 16, 26, 0.78) 52%,
+    rgba(12, 16, 26, 0.0) 100%
+  );
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html.pyxel-mobile-controls #bfsu-joystick-base {
+  position: relative;
+  width: 164px;
+  height: 164px;
+  border-radius: 50%;
+  border: 2px solid rgba(86, 149, 255, 0.95);
   background: radial-gradient(
     circle,
-    rgba(18, 28, 52, 0.65) 0%,
-    rgba(8, 14, 28, 0.15) 72%,
-    rgba(8, 14, 28, 0.0) 100%
+    rgba(34, 70, 136, 0.35) 0%,
+    rgba(12, 24, 50, 0.62) 58%,
+    rgba(6, 10, 22, 0.82) 100%
   );
   box-shadow:
-    inset 0 0 18px rgba(120, 170, 255, 0.28),
-    0 0 14px rgba(120, 170, 255, 0.45);
+    inset 0 0 22px rgba(102, 158, 255, 0.28),
+    0 0 22px rgba(88, 143, 255, 0.45);
+  touch-action: none;
 }
 
-html.pyxel-mobile-controls div#pyxel-mobile-joystick::before {
-  content: "";
+html.pyxel-mobile-controls #bfsu-joystick-thumb {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 42%;
-  height: 42%;
-  transform: translate(-50%, -50%);
+  width: 72px;
+  height: 72px;
+  margin-left: -36px;
+  margin-top: -36px;
   border-radius: 50%;
-  border: 2px solid rgba(183, 214, 255, 0.95);
+  border: 2px solid rgba(180, 219, 255, 1);
   background: radial-gradient(
     circle,
-    rgba(157, 199, 255, 0.95) 0%,
-    rgba(75, 122, 206, 0.95) 100%
+    rgba(194, 226, 255, 1) 0%,
+    rgba(100, 161, 255, 1) 52%,
+    rgba(54, 112, 215, 1) 100%
   );
   box-shadow:
-    inset 0 0 10px rgba(231, 244, 255, 0.45),
-    0 0 12px rgba(120, 170, 255, 0.65);
+    inset 0 0 10px rgba(226, 243, 255, 0.6),
+    0 0 16px rgba(98, 158, 255, 0.68);
+  transition: transform 0.04s linear;
+  will-change: transform;
+  touch-action: none;
 }
 
-html.pyxel-mobile-controls div#pyxel-mobile-buttons-layer,
-html.pyxel-mobile-controls div#pyxel-mobile-menu-layer {
-  position: absolute;
+html.pyxel-mobile-controls #bfsu-mobile-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
 }
 
-html.pyxel-mobile-controls div#pyxel-mobile-button-a,
-html.pyxel-mobile-controls div#pyxel-mobile-button-b,
-html.pyxel-mobile-controls div#pyxel-mobile-menu-start {
+html.pyxel-mobile-controls #bfsu-mobile-abx {
+  position: relative;
+  width: 180px;
+  height: 130px;
+}
+
+html.pyxel-mobile-controls .bfsu-btn {
   position: absolute;
-  transform: translate(-50%, -50%);
-  padding: 2px 7px;
-  border-radius: 999px;
-  border: 1px solid rgba(170, 210, 255, 0.96);
-  background: rgba(6, 12, 26, 0.88);
-  color: #d9ecff;
-  font: 700 11px/1 monospace;
-  letter-spacing: 0.8px;
-  text-shadow: 0 0 5px rgba(90, 150, 255, 0.85);
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  border: 2px solid rgba(133, 192, 255, 0.98);
+  background: radial-gradient(
+    circle,
+    rgba(18, 38, 80, 0.88) 0%,
+    rgba(9, 19, 42, 0.96) 100%
+  );
+  color: #dceeff;
+  font: 800 24px/1 "Arial", sans-serif;
+  letter-spacing: 0.4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-shadow: 0 0 8px rgba(88, 160, 255, 0.85);
   box-shadow:
-    inset 0 0 7px rgba(120, 170, 255, 0.28),
-    0 0 8px rgba(120, 170, 255, 0.45);
+    inset 0 0 12px rgba(122, 184, 255, 0.33),
+    0 0 15px rgba(92, 157, 255, 0.56);
+  transform: translateZ(0) scale(1);
+  transition: transform 0.06s ease, filter 0.06s ease;
+  touch-action: none;
 }
 
-html.pyxel-mobile-controls div#pyxel-mobile-button-a {
-  left: 34%;
-  top: 76%;
+html.pyxel-mobile-controls .bfsu-btn.active {
+  transform: translateZ(0) scale(0.93);
+  filter: brightness(1.18);
 }
 
-html.pyxel-mobile-controls div#pyxel-mobile-button-b {
-  left: 78%;
-  top: 52%;
+html.pyxel-mobile-controls #bfsu-btn-a {
+  left: 8px;
+  top: 36px;
 }
 
-html.pyxel-mobile-controls div#pyxel-mobile-menu-start {
-  left: 76%;
-  top: 44%;
+html.pyxel-mobile-controls #bfsu-btn-b {
+  right: 8px;
+  top: 36px;
+}
+
+html.pyxel-mobile-controls #bfsu-btn-x {
+  left: 59px;
+  top: 0;
+}
+
+html.pyxel-mobile-controls #bfsu-btn-start {
+  width: 138px;
+  height: 42px;
+  border-radius: 14px;
+  position: static;
+  font: 800 20px/1 "Arial", sans-serif;
 }
 </style>
 """.strip()
 
     script = f"""
-<script id="mobile-controls-visual-patch-script">
+<script id="mobile-controls-input-patch-script">
 (function () {{
   const ENABLE_MOBILE_CONTROLS_PATCH = {str(ENABLE_MOBILE_CONTROLS_PATCH).lower()};
   if (!ENABLE_MOBILE_CONTROLS_PATCH) {{
     return;
   }}
 
+  const MOBILE_INPUT_KEY = "__BFSU_MOBILE_INPUT";
   const isTouchDevice = () =>
     "ontouchstart" in window ||
     (navigator.maxTouchPoints || 0) > 0 ||
@@ -140,75 +197,172 @@ html.pyxel-mobile-controls div#pyxel-mobile-menu-start {
     return;
   }}
 
+  const state = window[MOBILE_INPUT_KEY] || {{}};
+  state.active = true;
+  state.axes = state.axes || {{ x: 0, y: 0 }};
+  state.buttons = state.buttons || {{ a: false, b: false, x: false, start: false }};
+  window[MOBILE_INPUT_KEY] = state;
+
   document.documentElement.classList.add("pyxel-mobile-controls");
 
-  let overlay = null;
-  let joystickLayer = null;
-  let buttonsLayer = null;
-  let menuLayer = null;
+  if (document.getElementById("bfsu-mobile-controls")) {{
+    return;
+  }}
 
-  function ensureOverlay(screen) {{
-    if (overlay && overlay.isConnected) {{
+  const controls = document.createElement("div");
+  controls.id = "bfsu-mobile-controls";
+  controls.innerHTML = `
+    <div id="bfsu-joystick-base">
+      <div id="bfsu-joystick-thumb"></div>
+    </div>
+    <div id="bfsu-mobile-right">
+      <div id="bfsu-mobile-abx">
+        <div id="bfsu-btn-a" class="bfsu-btn" data-btn="a">A</div>
+        <div id="bfsu-btn-b" class="bfsu-btn" data-btn="b">B</div>
+        <div id="bfsu-btn-x" class="bfsu-btn" data-btn="x">X</div>
+      </div>
+      <div id="bfsu-btn-start" class="bfsu-btn" data-btn="start">START</div>
+    </div>
+  `;
+  document.body.appendChild(controls);
+
+  const joystickBase = document.getElementById("bfsu-joystick-base");
+  const joystickThumb = document.getElementById("bfsu-joystick-thumb");
+
+  const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+  const clearAxes = () => {{
+    state.axes.x = 0;
+    state.axes.y = 0;
+    joystickThumb.style.transform = "translate(0px, 0px)";
+  }};
+  const clearButtons = () => {{
+    state.buttons.a = false;
+    state.buttons.b = false;
+    state.buttons.x = false;
+    state.buttons.start = false;
+  }};
+
+  clearAxes();
+  clearButtons();
+
+  let joystickTouchId = null;
+  const trackedButtonTouches = {{
+    a: new Set(),
+    b: new Set(),
+    x: new Set(),
+    start: new Set()
+  }};
+
+  function findTouchById(touches, identifier) {{
+    for (let i = 0; i < touches.length; i += 1) {{
+      if (touches[i].identifier === identifier) {{
+        return touches[i];
+      }}
+    }}
+    return null;
+  }}
+
+  function updateJoystickByTouch(touch) {{
+    const rect = joystickBase.getBoundingClientRect();
+    const centerX = rect.left + rect.width * 0.5;
+    const centerY = rect.top + rect.height * 0.5;
+    const radius = rect.width * 0.33;
+
+    let dx = (touch.clientX - centerX) / radius;
+    let dy = (touch.clientY - centerY) / radius;
+    const length = Math.hypot(dx, dy);
+    if (length > 1) {{
+      dx /= length;
+      dy /= length;
+    }}
+
+    state.axes.x = clamp(dx, -1, 1);
+    state.axes.y = clamp(dy, -1, 1);
+    joystickThumb.style.transform = `translate(${{state.axes.x * radius}}px, ${{state.axes.y * radius}}px)`;
+  }}
+
+  function bindButton(el, key) {{
+    if (!el) {{
       return;
     }}
+    const setPressed = (pressed) => {{
+      state.buttons[key] = pressed;
+      if (pressed) {{
+        el.classList.add("active");
+      }} else {{
+        el.classList.remove("active");
+      }}
+    }};
 
-    overlay = document.createElement("div");
-    overlay.id = "pyxel-mobile-overlay";
+    el.addEventListener("touchstart", (event) => {{
+      event.preventDefault();
+      for (let i = 0; i < event.changedTouches.length; i += 1) {{
+        trackedButtonTouches[key].add(event.changedTouches[i].identifier);
+      }}
+      setPressed(true);
+    }}, {{ passive: false }});
 
-    joystickLayer = document.createElement("div");
-    joystickLayer.id = "pyxel-mobile-joystick";
+    const clearTouches = (event) => {{
+      event.preventDefault();
+      for (let i = 0; i < event.changedTouches.length; i += 1) {{
+        trackedButtonTouches[key].delete(event.changedTouches[i].identifier);
+      }}
+      setPressed(trackedButtonTouches[key].size > 0);
+    }};
 
-    buttonsLayer = document.createElement("div");
-    buttonsLayer.id = "pyxel-mobile-buttons-layer";
-    const labelA = document.createElement("div");
-    labelA.id = "pyxel-mobile-button-a";
-    labelA.textContent = "A";
-    const labelB = document.createElement("div");
-    labelB.id = "pyxel-mobile-button-b";
-    labelB.textContent = "B";
-    buttonsLayer.appendChild(labelA);
-    buttonsLayer.appendChild(labelB);
-
-    menuLayer = document.createElement("div");
-    menuLayer.id = "pyxel-mobile-menu-layer";
-    const labelStart = document.createElement("div");
-    labelStart.id = "pyxel-mobile-menu-start";
-    labelStart.textContent = "START";
-    menuLayer.appendChild(labelStart);
-
-    overlay.appendChild(joystickLayer);
-    overlay.appendChild(buttonsLayer);
-    overlay.appendChild(menuLayer);
-    screen.appendChild(overlay);
+    el.addEventListener("touchend", clearTouches, {{ passive: false }});
+    el.addEventListener("touchcancel", clearTouches, {{ passive: false }});
+    el.addEventListener("touchmove", (event) => {{
+      event.preventDefault();
+    }}, {{ passive: false }});
   }}
 
-  function alignRect(target, rect, screenRect) {{
-    target.style.left = `${{rect.left - screenRect.left}}px`;
-    target.style.top = `${{rect.top - screenRect.top}}px`;
-    target.style.width = `${{rect.width}}px`;
-    target.style.height = `${{rect.height}}px`;
-  }}
+  bindButton(document.getElementById("bfsu-btn-a"), "a");
+  bindButton(document.getElementById("bfsu-btn-b"), "b");
+  bindButton(document.getElementById("bfsu-btn-x"), "x");
+  bindButton(document.getElementById("bfsu-btn-start"), "start");
 
-  function syncOverlay() {{
-    const screen = document.getElementById("pyxel-screen");
-    const cross = document.getElementById("pyxel-gamepad-cross");
-    const button = document.getElementById("pyxel-gamepad-button");
-    const menu = document.getElementById("pyxel-gamepad-menu");
-
-    if (screen && cross && button && menu) {{
-      ensureOverlay(screen);
-      const screenRect = screen.getBoundingClientRect();
-      alignRect(joystickLayer, cross.getBoundingClientRect(), screenRect);
-      alignRect(buttonsLayer, button.getBoundingClientRect(), screenRect);
-      alignRect(menuLayer, menu.getBoundingClientRect(), screenRect);
+  joystickBase.addEventListener("touchstart", (event) => {{
+    event.preventDefault();
+    if (joystickTouchId === null && event.changedTouches.length > 0) {{
+      joystickTouchId = event.changedTouches[0].identifier;
+      updateJoystickByTouch(event.changedTouches[0]);
     }}
+  }}, {{ passive: false }});
 
-    window.requestAnimationFrame(syncOverlay);
-  }}
+  document.addEventListener("touchmove", (event) => {{
+    if (joystickTouchId === null) {{
+      return;
+    }}
+    const touch = findTouchById(event.touches, joystickTouchId);
+    if (touch) {{
+      event.preventDefault();
+      updateJoystickByTouch(touch);
+    }}
+  }}, {{ passive: false }});
 
-  window.addEventListener("resize", () => window.requestAnimationFrame(syncOverlay), {{ passive: true }});
-  window.addEventListener("orientationchange", () => window.requestAnimationFrame(syncOverlay), {{ passive: true }});
-  window.requestAnimationFrame(syncOverlay);
+  const releaseJoystickIfNeeded = (event) => {{
+    if (joystickTouchId === null) {{
+      return;
+    }}
+    const touch = findTouchById(event.touches, joystickTouchId);
+    if (!touch) {{
+      joystickTouchId = null;
+      clearAxes();
+    }}
+  }};
+
+  document.addEventListener("touchend", releaseJoystickIfNeeded, {{ passive: false }});
+  document.addEventListener("touchcancel", releaseJoystickIfNeeded, {{ passive: false }});
+  window.addEventListener("blur", () => {{
+    joystickTouchId = null;
+    clearAxes();
+    clearButtons();
+  }});
+
+  controls.addEventListener("touchstart", (event) => event.preventDefault(), {{ passive: false }});
+  controls.addEventListener("touchmove", (event) => event.preventDefault(), {{ passive: false }});
+  controls.addEventListener("touchend", (event) => event.preventDefault(), {{ passive: false }});
 }})();
 </script>
 """.strip()
@@ -236,7 +390,8 @@ def _upsert_patch(html: str) -> str:
 
 def patch_html_file(target: Path) -> None:
     original = target.read_text(encoding="utf-8")
-    patched = _upsert_patch(original)
+    patched = _disable_builtin_gamepad(original)
+    patched = _upsert_patch(patched)
     if patched != original:
         target.write_text(patched, encoding="utf-8")
         print(f"[patch-mobile-controls] patched: {target}")

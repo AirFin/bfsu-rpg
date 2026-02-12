@@ -24,7 +24,7 @@ Output file:
 Mobile controls patch:
 
 - `scripts/build_web_release.sh` now auto-injects a mobile control visual patch
-  into `release/dist/index.html` (A/B/START high-contrast labels + left visual joystick).
+  into `release/dist/index.html` (custom mobile input layer with real joystick + A/B/X/START).
 - The patch is idempotent and can be re-applied safely.
 - To disable it, set `ENABLE_MOBILE_CONTROLS_PATCH = False` in
   `scripts/patch_mobile_controls.py`.
@@ -43,9 +43,9 @@ Open:
 
 Recommended mobile checks:
 
-- A/B/START labels are always visible and high-contrast.
-- Left side is rendered as a visual joystick (input behavior remains Pyxel 4-direction).
-- Touch controls still respond for title/menu/dialogue movement flows.
+- A/B/X/START labels are always visible, larger, and centered.
+- Left side is a real draggable joystick and supports continuous diagonal movement.
+- Pyxel built-in virtual D-pad is hidden/disabled to avoid input conflicts.
 
 ## 3) Publish to GitHub Pages (/docs)
 

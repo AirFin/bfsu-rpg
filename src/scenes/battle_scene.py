@@ -36,12 +36,12 @@ class BattleScene:
         """更新逻辑"""
         if self.turn == "player":
             # 玩家回合
-            if InputHandler.is_just_pressed([pyxel.KEY_A, pyxel.GAMEPAD1_BUTTON_A]):  # 攻击
+            if InputHandler.is_just_pressed(InputHandler.CONFIRM):  # 攻击
                 damage = 10
                 self.enemy_hp -= damage
                 self.message = f"造成 {damage} 点伤害！"
                 self.turn = "enemy"
-            elif InputHandler.is_just_pressed([pyxel.KEY_R, pyxel.GAMEPAD1_BUTTON_B]):  # 逃跑
+            elif InputHandler.is_just_pressed(InputHandler.CANCEL) or InputHandler.is_just_pressed([pyxel.KEY_R]):  # 逃跑
                 from src.scenes.scene_manager import SceneType
                 self.scene_manager.change_scene(SceneType.GAME)
                 
