@@ -8,7 +8,13 @@ import os
 import threading
 import queue
 import json
-from dotenv import load_dotenv
+
+try:
+    from dotenv import load_dotenv
+except ModuleNotFoundError:
+    # Web(Pyodide) 环境通常没有 python-dotenv，保持无 .env 模式运行
+    def load_dotenv(*args, **kwargs):
+        return False
 
 # 加载环境变量
 load_dotenv()
