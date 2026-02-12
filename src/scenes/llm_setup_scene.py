@@ -6,6 +6,7 @@ LLM 设置场景
 
 import pyxel
 from config import WINDOW_WIDTH, WINDOW_HEIGHT
+from src.systems.input_handler import InputHandler
 from src.utils.font_manager import draw_text, text_width
 from src.systems.llm_client import get_llm_client
 
@@ -75,22 +76,22 @@ class LLMSetupScene:
             self._handle_text_edit()
             return
 
-        if pyxel.btnp(pyxel.KEY_UP) or pyxel.btnp(pyxel.KEY_W):
+        if InputHandler.is_just_pressed(InputHandler.MOVE_UP):
             self.selected_option = (self.selected_option - 1) % self.options_count
-        elif pyxel.btnp(pyxel.KEY_DOWN) or pyxel.btnp(pyxel.KEY_S):
+        elif InputHandler.is_just_pressed(InputHandler.MOVE_DOWN):
             self.selected_option = (self.selected_option + 1) % self.options_count
 
         if self.selected_option == 0:
-            if (pyxel.btnp(pyxel.KEY_LEFT) or pyxel.btnp(pyxel.KEY_A) or
-                    pyxel.btnp(pyxel.KEY_RIGHT) or pyxel.btnp(pyxel.KEY_D)):
+            if (InputHandler.is_just_pressed(InputHandler.MOVE_LEFT) or
+                    InputHandler.is_just_pressed(InputHandler.MOVE_RIGHT)):
                 self.llm_enabled = not self.llm_enabled
 
-        if pyxel.btnp(pyxel.KEY_ESCAPE):
+        if InputHandler.is_just_pressed(InputHandler.CANCEL):
             from src.scenes.scene_manager import SceneType
             self.scene_manager.change_scene(SceneType.TITLE)
             return
 
-        if pyxel.btnp(pyxel.KEY_RETURN) or pyxel.btnp(pyxel.KEY_Z) or pyxel.btnp(pyxel.KEY_SPACE):
+        if InputHandler.is_just_pressed(InputHandler.CONFIRM):
             self._confirm_current_option()
 
     def _confirm_current_option(self):
@@ -128,19 +129,19 @@ class LLMSetupScene:
                 if ord(char) >= 32 and len(current_value) < 160:
                     current_value += char
 
-        if pyxel.btnp(pyxel.KEY_BACKSPACE, 10, 3) and current_value:
+        if InputHandler.is_just_pressed([pyxel.KEY_BACKSPACE], 10, 3) and current_value:
             current_value = current_value[:-1]
 
         self._set_field_value(self.edit_field_index, current_value)
 
-        if pyxel.btnp(pyxel.KEY_RETURN):
+        if InputHandler.is_just_pressed([pyxel.KEY_RETURN, pyxel.GAMEPAD1_BUTTON_A]):
             self.editing_field = False
             self.edit_field_index = -1
             self.status_message = "配置已更新"
             self.status_color = 11
             return
 
-        if pyxel.btnp(pyxel.KEY_ESCAPE):
+        if InputHandler.is_just_pressed([pyxel.KEY_ESCAPE, pyxel.GAMEPAD1_BUTTON_B]):
             self.editing_field = False
             self.edit_field_index = -1
 
@@ -330,5 +331,5 @@ class LLMSetupScene:
         status_y = panel_y + panel_h + 8
         draw_text(status_x, status_y, self.status_message, self.status_color)
 
-        hint = "↑↓选择, Enter编辑/确认, Ctrl/Cmd+V粘贴, Esc返回"
+        hint = "↑↓选择, A/Enter编辑确认, B/Esc返回, Ctrl/Cmd+V粘贴"
         draw_text((WINDOW_WIDTH - text_width(hint)) // 2, WINDOW_HEIGHT - 14, hint, 13)

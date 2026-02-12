@@ -7,6 +7,7 @@ AI 对话系统模块
 import pyxel
 import random
 from config import WINDOW_WIDTH, WINDOW_HEIGHT, COLOR_WHITE, COLOR_BLACK
+from src.systems.input_handler import InputHandler
 from src.systems.llm_client import get_llm_client
 from src.utils.font_manager import draw_text, text_width
 
@@ -196,8 +197,8 @@ class AIDialogueSystem:
                 self.frame_counter = 0
                 self.response_display_index += 1
                 
-        # 检查 TAB 键退出
-        if pyxel.btnp(pyxel.KEY_TAB):
+        # 检查退出键（Tab / 手柄B）
+        if InputHandler.is_just_pressed(InputHandler.EXIT_DIALOGUE):
             self.end_dialogue()
             return
             
@@ -220,12 +221,12 @@ class AIDialogueSystem:
                     self.input_text += char
                     
         # 退格键删除
-        if pyxel.btnp(pyxel.KEY_BACKSPACE, 10, 3):
+        if InputHandler.is_just_pressed([pyxel.KEY_BACKSPACE], 10, 3):
             if self.input_text:
                 self.input_text = self.input_text[:-1]
                 
-        # 回车键发送
-        if pyxel.btnp(pyxel.KEY_RETURN) and self.input_delay == 0:
+        # 确认键发送（Enter / 手柄A）
+        if InputHandler.is_just_pressed([pyxel.KEY_RETURN, pyxel.GAMEPAD1_BUTTON_A]) and self.input_delay == 0:
             if self.input_text.strip():
                 self._send_message()
                 self.input_delay = 10
@@ -413,7 +414,7 @@ class AIDialogueSystem:
     def _draw_hints(self):
         """绘制操作提示"""
         hint_y = WINDOW_HEIGHT - 14
-        draw_text(10, hint_y, "Enter:发送  Tab:退出", 6)
+        draw_text(10, hint_y, "A/Enter:发送  B/Tab:退出", 6)
         
         # AI 状态指示
         if self.llm.is_available():

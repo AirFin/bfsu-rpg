@@ -6,6 +6,7 @@
 
 import pyxel
 from config import WINDOW_WIDTH, WINDOW_HEIGHT, COLOR_WHITE, COLOR_RED
+from src.systems.input_handler import InputHandler
 from src.utils.font_manager import draw_text, text_width
 
 
@@ -35,12 +36,12 @@ class BattleScene:
         """更新逻辑"""
         if self.turn == "player":
             # 玩家回合
-            if pyxel.btnp(pyxel.KEY_A):  # 攻击
+            if InputHandler.is_just_pressed([pyxel.KEY_A, pyxel.GAMEPAD1_BUTTON_A]):  # 攻击
                 damage = 10
                 self.enemy_hp -= damage
                 self.message = f"造成 {damage} 点伤害！"
                 self.turn = "enemy"
-            elif pyxel.btnp(pyxel.KEY_R):  # 逃跑
+            elif InputHandler.is_just_pressed([pyxel.KEY_R, pyxel.GAMEPAD1_BUTTON_B]):  # 逃跑
                 from src.scenes.scene_manager import SceneType
                 self.scene_manager.change_scene(SceneType.GAME)
                 
@@ -58,7 +59,7 @@ class BattleScene:
         
         # 绘制战斗菜单
         draw_text(20, 180, "[A] 攻击", COLOR_WHITE)
-        draw_text(20, 196, "[R] 逃跑", COLOR_WHITE)
+        draw_text(20, 196, "[B/R] 逃跑", COLOR_WHITE)
         
         # 绘制消息
         draw_text(20, 216, self.message, COLOR_WHITE)

@@ -22,6 +22,7 @@ from src.map.campus_map import (MAP_TILES_WIDTH, MAP_TILES_HEIGHT, NPC_DATA, CAT
     LIBRARY_WIDTH, LIBRARY_HEIGHT, LIBRARY_NPC_DATA, LIBRARY_BOOKSHELF_CONTENT,
     TILE_LIB_BOOKSHELF, TILE_LIB_CHAIR)
 from src.systems.ai_dialogue import AIDialogueSystem
+from src.systems.input_handler import InputHandler
 from src.ui.game_menu import GameMenu
 from src.utils.font_manager import draw_text, text_width
 
@@ -429,20 +430,21 @@ class GameScene:
             
         # 如果正在普通对话中（东校区）
         if self.npc_manager.is_in_dialogue():
-            # 按空格或回车继续对话
-            if pyxel.btnp(pyxel.KEY_SPACE) or pyxel.btnp(pyxel.KEY_RETURN):
+            # 按确认键继续对话
+            if InputHandler.is_just_pressed(InputHandler.CONFIRM):
                 self.npc_manager.next_dialogue()
             return  # 对话时不能移动
         
         # 如果正在图书馆NPC对话中
         if self.current_map == MAP_LIBRARY and self.library_npc_manager and self.library_npc_manager.is_in_dialogue():
-            if pyxel.btnp(pyxel.KEY_SPACE) or pyxel.btnp(pyxel.KEY_RETURN):
+            if InputHandler.is_just_pressed(InputHandler.CONFIRM):
                 self.library_npc_manager.next_dialogue()
             return
         
         # 如果在图书馆且正在查看书架
         if self.current_map == MAP_LIBRARY and self.library_interaction['show_bookshelf']:
-            if pyxel.btnp(pyxel.KEY_SPACE) or pyxel.btnp(pyxel.KEY_ESCAPE):
+            if (InputHandler.is_just_pressed(InputHandler.CONFIRM) or
+                    InputHandler.is_just_pressed(InputHandler.CANCEL)):
                 self.library_interaction['show_bookshelf'] = False
                 self.library_interaction['bookshelf_content'] = None
             return
@@ -533,8 +535,8 @@ class GameScene:
             )
             self.show_interaction_hint = self.nearby_npc is not None
             
-            # 按空格与NPC交互（进入AI对话模式）
-            if self.show_interaction_hint and pyxel.btnp(pyxel.KEY_SPACE):
+            # 按交互键与NPC交互（进入AI对话模式）
+            if self.show_interaction_hint and InputHandler.is_just_pressed(InputHandler.INTERACT):
                 # 如果NPC正在执行动作，不能对话
                 if self.nearby_npc.is_busy():
                     pass
@@ -565,8 +567,8 @@ class GameScene:
         # 更新相机跟随玩家
         self._update_camera()
         
-        # 按 M 键打开菜单
-        if pyxel.btnp(pyxel.KEY_M):
+        # 菜单键打开菜单（M / 手柄Start）
+        if InputHandler.is_just_pressed(InputHandler.MENU):
             self.game_menu.open()
     
     def _update_weather(self):
@@ -704,10 +706,10 @@ class GameScene:
             self.player.has_skateboard = True
             
             # 添加到背包
-            self.game_menu.add_item("滑板", "按B键切换滑板模式，移动更快！")
+            self.game_menu.add_item("滑板", "按B键或手柄X切换滑板模式，移动更快！")
             
             # 显示收集提示
-            self.collect_message = "获得了 滑板！按B键使用"
+            self.collect_message = "获得了 滑板！按B键或手柄X使用"
             self.collect_message_timer = 120  # 显示2秒
             
             print("[游戏] 收集了滑板！")
@@ -749,16 +751,18 @@ class GameScene:
         dx, dy = 0, 0
         speed = 2
         
-        if pyxel.btn(pyxel.KEY_W):
+        move_x, move_y = InputHandler.get_movement()
+
+        if move_y < 0:
             dy = -speed
             self.player.direction = "up"
-        elif pyxel.btn(pyxel.KEY_S):
+        elif move_y > 0:
             dy = speed
             self.player.direction = "down"
-        if pyxel.btn(pyxel.KEY_A):
+        if move_x < 0:
             dx = -speed
             self.player.direction = "left"
-        elif pyxel.btn(pyxel.KEY_D):
+        elif move_x > 0:
             dx = speed
             self.player.direction = "right"
         
@@ -845,7 +849,7 @@ class GameScene:
         px, py = self.player.x, self.player.y
         entrance = self.library_entrance
         
-        # 检查玩家是否在图书馆门前（自动进入，不需要按空格）
+        # 检查玩家是否在图书馆门前（自动进入，不需要按交互键）
         if (abs(px - entrance['x']) < TILE_SIZE * 1.2 and
             abs(py - entrance['y']) < TILE_SIZE * 1.2):
             # 保存当前位置
@@ -916,7 +920,7 @@ class GameScene:
         if nearby_bookshelf:
             self.show_interaction_hint = True
             self.nearby_npc = None
-            if pyxel.btnp(pyxel.KEY_SPACE):
+            if InputHandler.is_just_pressed(InputHandler.INTERACT):
                 content = LIBRARY_BOOKSHELF_CONTENT[nearby_bookshelf]
                 self.library_interaction['show_bookshelf'] = True
                 self.library_interaction['bookshelf_content'] = content
@@ -934,8 +938,8 @@ class GameScene:
             sign['y'] - 32 <= py <= sign['y'] + 48):
             self.show_sign_hint = True
             self.sign_message = sign['text']
-            # 按空格阅读牌子
-            if pyxel.btnp(pyxel.KEY_SPACE):
+            # 按交互键阅读牌子
+            if InputHandler.is_just_pressed(InputHandler.INTERACT):
                 print(f"[游戏] 阅读牌子: {sign['text']}")
         else:
             self.show_sign_hint = False
@@ -1148,15 +1152,15 @@ class GameScene:
             draw_text(box_x + 20, box_y + 35 + i * 20, f"• {book}", 7)
         
         # 关闭提示
-        hint = "按 空格键 关闭"
+        hint = "按A/Enter关闭"
         draw_text(box_x + (box_w - text_width(hint)) // 2, box_y + box_h - 20, hint, 13)
     
     def _draw_sit_hint(self):
         """绘制坐下提示"""
         if self.library_interaction['is_sitting']:
-            hint = "按空格站起来"
+            hint = "按A/Enter站起来"
         else:
-            hint = "按空格坐下"
+            hint = "按A/Enter坐下"
         
         box_x = WINDOW_WIDTH // 2 - 40
         box_y = 20
@@ -1192,7 +1196,7 @@ class GameScene:
                 abs(py - entrance['y']) < TILE_SIZE * 1.5 and
                 self.player.direction == 'up'):
                 # 显示进入图书馆提示
-                hint = "按空格进入图书馆"
+                hint = "按A/Enter进入图书馆"
                 box_x = WINDOW_WIDTH // 2 - 55
                 box_y = 20
                 pyxel.rect(box_x, box_y, 110, 18, 0)
@@ -1201,9 +1205,9 @@ class GameScene:
         elif self.current_map == MAP_LIBRARY:
             # 图书馆内交互提示
             if self.nearby_npc:
-                hint = "按空格对话"
+                hint = "按A/Enter对话"
             else:
-                hint = "按空格查看书架"
+                hint = "按A/Enter查看书架"
             box_x = WINDOW_WIDTH // 2 - 50
             box_y = 20
             pyxel.rect(box_x, box_y, 100, 18, 0)
@@ -1537,16 +1541,16 @@ class GameScene:
         
         # 操作提示（对话时隐藏）
         if not self.npc_manager.is_in_dialogue() and not self.ai_dialogue.active:
-            hint = "WASD:移动 空格:对话 M:菜单"
+            hint = "方向/WASD/手柄:移动 A:对话 Start/M:菜单"
             # 如果有滑板，添加滑板提示
             if self.player.has_skateboard:
                 if self.player.skateboard_mode:
-                    hint = "WASD:移动 B:下滑板 空格:对话 M:菜单"
+                    hint = "方向/WASD:移动 B键/手柄X:下滑板 A:对话 Start/M:菜单"
                     # 显示滑板模式指示
                     mode_text = "🛹滑板模式"
                     draw_text(4, WINDOW_HEIGHT - 28, mode_text, 10)
                 else:
-                    hint = "WASD:移动 B:滑板 空格:对话 M:菜单"
+                    hint = "方向/WASD:移动 B键/手柄X:滑板 A:对话 Start/M:菜单"
             draw_text(WINDOW_WIDTH - text_width(hint) - 4, WINDOW_HEIGHT - 14, hint, 7)
         
     def _get_nearby_building_name(self):

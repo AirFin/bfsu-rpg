@@ -8,6 +8,7 @@ from config import (
     PLAYER_SPEED, PLAYER_MAX_HP, TILE_SIZE
 )
 from src.map.campus_map import PLAYER_START_TILE_X, PLAYER_START_TILE_Y, MAP_TILES_WIDTH, MAP_TILES_HEIGHT
+from src.systems.input_handler import InputHandler
 
 
 class Player:
@@ -67,27 +68,28 @@ class Player:
     def update(self):
         """更新玩家状态"""
         # B键切换滑板模式
-        if pyxel.btnp(pyxel.KEY_B) and self.has_skateboard:
+        if InputHandler.is_just_pressed(InputHandler.SKATE_TOGGLE) and self.has_skateboard:
             self.skateboard_mode = not self.skateboard_mode
             if self.skateboard_mode:
                 self.speed = self.skateboard_speed
             else:
                 self.speed = self.base_speed
         
-        # 处理输入 (WASD)
+        # 处理输入（键盘 + 手柄）
+        move_x, move_y = InputHandler.get_movement()
         dx, dy = 0, 0
-        
-        if pyxel.btn(pyxel.KEY_W):
+
+        if move_y < 0:
             dy = -self.speed
             self.direction = "up"
-        elif pyxel.btn(pyxel.KEY_S):
+        elif move_y > 0:
             dy = self.speed
             self.direction = "down"
-            
-        if pyxel.btn(pyxel.KEY_A):
+
+        if move_x < 0:
             dx = -self.speed
             self.direction = "left"
-        elif pyxel.btn(pyxel.KEY_D):
+        elif move_x > 0:
             dx = self.speed
             self.direction = "right"
         

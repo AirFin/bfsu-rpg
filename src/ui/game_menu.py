@@ -6,6 +6,7 @@
 
 import pyxel
 from config import WINDOW_WIDTH, WINDOW_HEIGHT, COLOR_WHITE, COLOR_BLACK, COLOR_YELLOW
+from src.systems.input_handler import InputHandler
 from src.utils.font_manager import draw_text, text_width
 
 
@@ -81,8 +82,8 @@ class GameMenu:
         if not self.active:
             return
             
-        # ESC 或 M 或 X 键关闭/返回
-        if pyxel.btnp(pyxel.KEY_ESCAPE) or pyxel.btnp(pyxel.KEY_M):
+        # 菜单键关闭/返回
+        if InputHandler.is_just_pressed(InputHandler.MENU):
             if self.current_menu == 'main':
                 self.close()
             else:
@@ -90,7 +91,8 @@ class GameMenu:
                 self.selected = 0
             return
             
-        if pyxel.btnp(pyxel.KEY_X):
+        # 取消键关闭/返回（键盘 Esc/X，手柄 B）
+        if InputHandler.is_just_pressed(InputHandler.CANCEL):
             if self.current_menu == 'main':
                 self.close()
             else:
@@ -111,13 +113,13 @@ class GameMenu:
     def _update_main_menu(self):
         """更新主菜单"""
         # 上下选择
-        if pyxel.btnp(pyxel.KEY_UP) or pyxel.btnp(pyxel.KEY_W):
+        if InputHandler.is_just_pressed(InputHandler.MOVE_UP):
             self.selected = (self.selected - 1) % len(self.main_options)
-        elif pyxel.btnp(pyxel.KEY_DOWN) or pyxel.btnp(pyxel.KEY_S):
+        elif InputHandler.is_just_pressed(InputHandler.MOVE_DOWN):
             self.selected = (self.selected + 1) % len(self.main_options)
             
         # 确认选择
-        if pyxel.btnp(pyxel.KEY_RETURN) or pyxel.btnp(pyxel.KEY_Z) or pyxel.btnp(pyxel.KEY_SPACE):
+        if InputHandler.is_just_pressed(InputHandler.CONFIRM):
             option = self.main_options[self.selected]
             if option == '背包':
                 self.current_menu = 'inventory'
@@ -136,9 +138,9 @@ class GameMenu:
         if len(self.inventory_items) == 0:
             return
             
-        if pyxel.btnp(pyxel.KEY_UP) or pyxel.btnp(pyxel.KEY_W):
+        if InputHandler.is_just_pressed(InputHandler.MOVE_UP):
             self.selected = (self.selected - 1) % len(self.inventory_items)
-        elif pyxel.btnp(pyxel.KEY_DOWN) or pyxel.btnp(pyxel.KEY_S):
+        elif InputHandler.is_just_pressed(InputHandler.MOVE_DOWN):
             self.selected = (self.selected + 1) % len(self.inventory_items)
             
     def _update_quests(self):
@@ -146,20 +148,20 @@ class GameMenu:
         if len(self.quests) == 0:
             return
             
-        if pyxel.btnp(pyxel.KEY_UP) or pyxel.btnp(pyxel.KEY_W):
+        if InputHandler.is_just_pressed(InputHandler.MOVE_UP):
             self.selected = (self.selected - 1) % len(self.quests)
-        elif pyxel.btnp(pyxel.KEY_DOWN) or pyxel.btnp(pyxel.KEY_S):
+        elif InputHandler.is_just_pressed(InputHandler.MOVE_DOWN):
             self.selected = (self.selected + 1) % len(self.quests)
             
     def _update_settings(self):
         """更新设置菜单"""
-        if pyxel.btnp(pyxel.KEY_UP) or pyxel.btnp(pyxel.KEY_W):
+        if InputHandler.is_just_pressed(InputHandler.MOVE_UP):
             self.selected = (self.selected - 1) % len(self.settings_options)
-        elif pyxel.btnp(pyxel.KEY_DOWN) or pyxel.btnp(pyxel.KEY_S):
+        elif InputHandler.is_just_pressed(InputHandler.MOVE_DOWN):
             self.selected = (self.selected + 1) % len(self.settings_options)
             
         # 确认选择
-        if pyxel.btnp(pyxel.KEY_RETURN) or pyxel.btnp(pyxel.KEY_Z) or pyxel.btnp(pyxel.KEY_SPACE):
+        if InputHandler.is_just_pressed(InputHandler.CONFIRM):
             if self.selected == 0:  # 音量开关
                 self.sound_on = not self.sound_on
                 self.settings_options[0] = '音量: 开' if self.sound_on else '音量: 关'
@@ -226,7 +228,7 @@ class GameMenu:
                 draw_text(x + 20, opt_y, option, 7)
                 
         # 操作提示
-        hint = "Z:确认 X:关闭"
+        hint = "A/Z/Enter:确认  B/X/Esc:关闭"
         draw_text(x + (120 - text_width(hint)) // 2, y + 120 - 16, hint, 13)
         
     def _draw_inventory(self):
@@ -264,7 +266,7 @@ class GameMenu:
                     draw_text(x + 10, y + 155, desc[:20], 13)
                     
         # 操作提示
-        hint = "X:返回"
+        hint = "B/X/Esc:返回"
         draw_text(x + (200 - text_width(hint)) // 2, y + 180 - 16, hint, 13)
         
     def _draw_quests(self):
@@ -303,7 +305,7 @@ class GameMenu:
                     draw_text(x + 10, y + 155, desc, 13)
                     
         # 操作提示
-        hint = "X:返回"
+        hint = "B/X/Esc:返回"
         draw_text(x + (220 - text_width(hint)) // 2, y + 180 - 16, hint, 13)
         
     def _draw_settings(self):
@@ -319,5 +321,5 @@ class GameMenu:
                 draw_text(x + 20, opt_y, option, 7)
                 
         # 操作提示
-        hint = "Z:切换 X:返回"
+        hint = "A/Z:切换  B/X/Esc:返回"
         draw_text(x + (150 - text_width(hint)) // 2, y + 130 - 16, hint, 13)

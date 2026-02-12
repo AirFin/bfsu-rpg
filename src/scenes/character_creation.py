@@ -6,6 +6,7 @@
 
 import pyxel
 from config import WINDOW_WIDTH, WINDOW_HEIGHT
+from src.systems.input_handler import InputHandler
 from src.utils.font_manager import draw_text, text_width
 
 
@@ -93,19 +94,19 @@ class CharacterCreationScene:
             return
             
         # 上下选择
-        if pyxel.btnp(pyxel.KEY_UP) or pyxel.btnp(pyxel.KEY_W):
+        if InputHandler.is_just_pressed(InputHandler.MOVE_UP):
             self.selected_option = (self.selected_option - 1) % self.options_count
-        elif pyxel.btnp(pyxel.KEY_DOWN) or pyxel.btnp(pyxel.KEY_S):
+        elif InputHandler.is_just_pressed(InputHandler.MOVE_DOWN):
             self.selected_option = (self.selected_option + 1) % self.options_count
             
         # 左右切换选项值
-        if pyxel.btnp(pyxel.KEY_LEFT) or pyxel.btnp(pyxel.KEY_A):
+        if InputHandler.is_just_pressed(InputHandler.MOVE_LEFT):
             self._change_option(-1)
-        elif pyxel.btnp(pyxel.KEY_RIGHT) or pyxel.btnp(pyxel.KEY_D):
+        elif InputHandler.is_just_pressed(InputHandler.MOVE_RIGHT):
             self._change_option(1)
             
         # 确认
-        if pyxel.btnp(pyxel.KEY_RETURN) or pyxel.btnp(pyxel.KEY_Z) or pyxel.btnp(pyxel.KEY_SPACE):
+        if InputHandler.is_just_pressed(InputHandler.CONFIRM):
             if self.selected_option == 2:  # 姓名
                 self.editing_name = True
             elif self.selected_option == 3:  # 确认
@@ -132,16 +133,16 @@ class CharacterCreationScene:
                         self.player_data['name'] += char
                         
         # 退格删除
-        if pyxel.btnp(pyxel.KEY_BACKSPACE, 10, 3):
+        if InputHandler.is_just_pressed([pyxel.KEY_BACKSPACE], 10, 3):
             if self.player_data['name']:
                 self.player_data['name'] = self.player_data['name'][:-1]
                 
-        # 回车确认
-        if pyxel.btnp(pyxel.KEY_RETURN):
+        # 回车/手柄A确认
+        if InputHandler.is_just_pressed([pyxel.KEY_RETURN, pyxel.GAMEPAD1_BUTTON_A]):
             self.editing_name = False
             
-        # ESC 取消
-        if pyxel.btnp(pyxel.KEY_ESCAPE):
+        # ESC/手柄B取消
+        if InputHandler.is_just_pressed([pyxel.KEY_ESCAPE, pyxel.GAMEPAD1_BUTTON_B]):
             self.editing_name = False
             
     def _confirm_creation(self):
@@ -245,7 +246,7 @@ class CharacterCreationScene:
         if self.editing_name:
             hint = "输入姓名，回车确认"
         else:
-            hint = "↑↓选择 ←→切换 Z确认"
+            hint = "↑↓选择 ←→切换 A/Z/Enter确认"
         hint_x = WINDOW_WIDTH // 2 - text_width(hint) // 2
         draw_text(hint_x, WINDOW_HEIGHT - 20, hint, 13)
         

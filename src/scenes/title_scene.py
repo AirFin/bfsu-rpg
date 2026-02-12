@@ -7,6 +7,7 @@
 import pyxel
 import math
 from config import WINDOW_WIDTH, WINDOW_HEIGHT, COLOR_WHITE, COLOR_YELLOW
+from src.systems.input_handler import InputHandler
 from src.utils.font_manager import draw_text, text_width
 
 
@@ -40,7 +41,7 @@ class TitleScene:
             self.show_text = not self.show_text
         
         # 按键检测
-        if pyxel.btnp(pyxel.KEY_RETURN) or pyxel.btnp(pyxel.KEY_SPACE):
+        if InputHandler.is_just_pressed(InputHandler.CONFIRM):
             from src.scenes.scene_manager import SceneType
             self.scene_manager.change_scene(SceneType.LLM_SETUP)
             
@@ -67,12 +68,12 @@ class TitleScene:
         
         # 绘制提示文字（闪烁）
         if self.show_text:
-            hint = "按 ENTER 继续"
+            hint = "按 A / ENTER 继续"
             hint_x = (WINDOW_WIDTH - text_width(hint)) // 2
             draw_text(hint_x, 150, hint, COLOR_WHITE)
             
         # 操作说明
-        help_text = "WASD - 移动"
+        help_text = "方向键/WASD/手柄 - 移动"
         draw_text((WINDOW_WIDTH - text_width(help_text)) // 2, 180, help_text, 6)
         
         # 绘制版权信息
