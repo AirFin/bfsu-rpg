@@ -82,6 +82,12 @@ fi
 
 mv "${HTML_SOURCE}" "${HTML_TARGET}"
 
+echo "[build] patch mobile controls overlay"
+(
+  cd "${ROOT_DIR}"
+  conda run -n pyxel_env python scripts/patch_mobile_controls.py "${HTML_TARGET}"
+)
+
 if grep -Eq "LLM_API_KEY|sk-[A-Za-z0-9]{10,}" "${HTML_TARGET}"; then
   echo "[build] error: sensitive token pattern found in ${HTML_TARGET}"
   exit 1

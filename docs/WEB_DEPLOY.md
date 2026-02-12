@@ -21,6 +21,14 @@ Output file:
 
 `release/dist/index.html`
 
+Mobile controls patch:
+
+- `scripts/build_web_release.sh` now auto-injects a mobile control visual patch
+  into `release/dist/index.html` (A/B/START high-contrast labels + left visual joystick).
+- The patch is idempotent and can be re-applied safely.
+- To disable it, set `ENABLE_MOBILE_CONTROLS_PATCH = False` in
+  `scripts/patch_mobile_controls.py`.
+
 ## 2) Local preview
 
 From project root:
@@ -32,6 +40,12 @@ conda run -n pyxel_env python -m http.server 8000
 Open:
 
 `http://localhost:8000/release/dist/`
+
+Recommended mobile checks:
+
+- A/B/START labels are always visible and high-contrast.
+- Left side is rendered as a visual joystick (input behavior remains Pyxel 4-direction).
+- Touch controls still respond for title/menu/dialogue movement flows.
 
 ## 3) Publish to GitHub Pages (/docs)
 
