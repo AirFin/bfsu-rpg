@@ -1,0 +1,45 @@
+{
+  "items": [
+    {
+      "id": 1,
+      "name": "草药",
+      "type": "consumable",
+      "description": "恢复 20 点生命值",
+      "effect_type": "heal",
+      "effect_value": 20,
+      "value": 10
+    },
+    {
+      "id": 2,
+      "name": "生命药水",
+      "type": "consumable",
+      "description": "恢复 50 点生命值",
+      "effect_type": "heal",
+      "effect_value": 50,
+      "value": 30
+    },
+    {
+      "id": 3,
+      "name": "铁剑",
+      "type": "weapon",
+      "description": "普通的铁剑",
+      "attack": 10,
+      "value": 100
+    },
+    {
+      "id": 4,
+      "name": "皮甲",
+      "type": "armor",
+      "description": "简单的皮质护甲",
+      "defense": 5,
+      "value": 80
+    },
+    {
+      "id": 5,
+      "name": "钥匙",
+      "type": "key",
+      "description": "一把神秘的钥匙",
+      "value": 0
+    }
+  ]
+}

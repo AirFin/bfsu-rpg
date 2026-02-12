@@ -1,0 +1,30 @@
+{
+  "quests": [
+    {
+      "id": 1,
+      "name": "初出茅庐",
+      "description": "击败 3 只史莱姆",
+      "type": "kill",
+      "target": "史莱姆",
+      "target_count": 3,
+      "rewards": {
+        "exp": 50,
+        "gold": 30,
+        "items": []
+      }
+    },
+    {
+      "id": 2,
+      "name": "草药收集",
+      "description": "收集 5 株草药",
+      "type": "collect",
+      "target_item_id": 1,
+      "target_count": 5,
+      "rewards": {
+        "exp": 30,
+        "gold": 50,
+        "items": [2]
+      }
+    }
+  ]
+}

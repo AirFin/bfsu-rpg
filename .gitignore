@@ -1,0 +1,9 @@
+/.env
+/release/web_staging/
+/release/dist/
+*.pyxapp
+__pycache__/
+._*
+/.conda/
+/.vscode/
+/.DS_Store
